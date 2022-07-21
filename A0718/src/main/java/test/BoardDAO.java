@@ -3,16 +3,13 @@ package test;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.Vector;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.sql.DataSource;
 
 public class BoardDAO {
-	
-	Connection con;
-	PreparedStatement pstmt;
-	ResultSet rs;
 	
 	Connection con;
 	PreparedStatement pstmt;
@@ -176,5 +173,43 @@ public BoardBean oneBoard(int num) {
 		return bean;
 	
 	}
+public void reWriteBoard(BoardBean bean) {
+	
+	int ref=bean.getRef();//1
+	int re_step=bean.getRe_step();//2
+	int re_level=bean.getRe_level();//2
+	
+	getCon();
+	
+	try {
+		String levelsql="update board set re_level=re_level+1 where ref=? and re_level>?";
+		
+		pstmt=con.prepareStatement(levelsql);
+		
+		pstmt.setInt(1,ref);
+		pstmt.setInt(2, re_level);
+		
+		pstmt.executeUpdate();
+		
+		String sql="insert into board values(bo_seq.NEXTVAL,?,?,?,?,sysdate,?,?,?,0,?)";
+		//댓글을 디비에 삽입시킨다.
+		pstmt=con.prepareStatement(sql);
+		
+		pstmt.setString(1, bean.getWriter());
+		pstmt.setString(2, bean.getEmail());
+		pstmt.setString(3, bean.getSubject());
+		pstmt.setString(4, bean.getPassword());
+		pstmt.setInt(5, ref);
+		pstmt.setInt(6, re_step+1);
+		pstmt.setInt(7, re_level+1);
+		pstmt.setString(8, bean.getContent());
+		
+		pstmt.executeUpdate();
+		con.close();
+
+	}catch(Exception e) {
+		e.printStackTrace();
+	}	
+}
 
 }
