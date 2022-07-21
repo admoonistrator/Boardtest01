@@ -211,5 +211,40 @@ public void reWriteBoard(BoardBean bean) {
 		e.printStackTrace();
 	}	
 }
-
+public String getPass(int num) {
+	
+	String pass="";
+	getCon();
+	
+	try {
+		String sql="select password from board where num=?";
+		pstmt=con.prepareStatement(sql);
+		pstmt.setInt(1, num);
+		
+		rs=pstmt.executeQuery();
+		
+		if(rs.next()) {
+			pass=rs.getString(1);
+		}
+		con.close();
+	}catch(Exception e) {
+		e.printStackTrace();
+	}	
+	return pass;
+}
+public void deleteBoard(int num) {
+	getCon();
+	try {
+		String sql="delete from board where num=?";
+		pstmt=con.prepareStatement(sql);
+		pstmt.setInt(1, num);
+		pstmt.executeUpdate();
+		con.close();
+		
+	}catch(Exception e){
+		e.printStackTrace();
+	}
+			
+	}
+}
 }
