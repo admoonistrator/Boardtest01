@@ -8,6 +8,7 @@ import java.util.Vector;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.sql.DataSource;
+import javax.swing.border.Border;
 
 public class BoardDAO {
 	
@@ -27,15 +28,14 @@ public class BoardDAO {
 			e.printStackTrace();
 		}
 	}
-
+	
 	public void insertBoard(BoardBean bean) {
-		
-getCon();
+		getCon();
 		
 		int ref=0;  //글 그룹
-		int re_step=1;  //새 글, 새 계층
+		int re_step=1;  //새 글
 		int re_level=1;
-
+		
 		try {
 			//가장 큰 ref값을 읽어와라.
 			String rsql="select max(ref) from board";
@@ -67,26 +67,6 @@ getCon();
 			e.printStackTrace();
 		}
 		
-	}
-	public int getAllCount() {
-		getCon();
-		
-		//게시글 전체수
-		int count=0;
-		
-		try {
-			String sql="select count(*) from board";
-			pstmt=con.prepareStatement(sql);
-			rs=pstmt.executeQuery();
-			
-			if(rs.next()) {
-				count=rs.getInt(1);
-			}
-			con.close();
-		}catch(Exception e) {
-			e.printStackTrace();
-		}
-		return count;
 	}
 	
 	public Vector<BoardBean> allBoard(int start, int end){
@@ -131,6 +111,27 @@ getCon();
 		}
 		return v;
 	}
+	public int getAllCount() {
+		getCon();
+		
+		//게시글 전체수
+		int count=0;
+		
+		try {
+			String sql="select count(*) from board";
+			pstmt=con.prepareStatement(sql);
+			rs=pstmt.executeQuery();
+			
+			if(rs.next()) {
+				count=rs.getInt(1);
+			}
+			con.close();
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		return count;
+	}
+	
 public BoardBean oneBoard(int num) {
 		
 		BoardBean bean=new BoardBean();
@@ -173,78 +174,128 @@ public BoardBean oneBoard(int num) {
 		return bean;
 	
 	}
-public void reWriteBoard(BoardBean bean) {
-	
-	int ref=bean.getRef();//1
-	int re_step=bean.getRe_step();//2
-	int re_level=bean.getRe_level();//2
-	
-	getCon();
-	
-	try {
-		String levelsql="update board set re_level=re_level+1 where ref=? and re_level>?";
+	public void reWriteBoard(BoardBean bean) {
 		
-		pstmt=con.prepareStatement(levelsql);
+		int ref=bean.getRef();//1
+		int re_step=bean.getRe_step();//2
+		int re_level=bean.getRe_level();//2
 		
-		pstmt.setInt(1,ref);
-		pstmt.setInt(2, re_level);
+		getCon();
 		
-		pstmt.executeUpdate();
-		
-		String sql="insert into board values(bo_seq.NEXTVAL,?,?,?,?,sysdate,?,?,?,0,?)";
-		//댓글을 디비에 삽입시킨다.
-		pstmt=con.prepareStatement(sql);
-		
-		pstmt.setString(1, bean.getWriter());
-		pstmt.setString(2, bean.getEmail());
-		pstmt.setString(3, bean.getSubject());
-		pstmt.setString(4, bean.getPassword());
-		pstmt.setInt(5, ref);
-		pstmt.setInt(6, re_step+1);
-		pstmt.setInt(7, re_level+1);
-		pstmt.setString(8, bean.getContent());
-		
-		pstmt.executeUpdate();
-		con.close();
-
-	}catch(Exception e) {
-		e.printStackTrace();
-	}	
-}
-public String getPass(int num) {
-	
-	String pass="";
-	getCon();
-	
-	try {
-		String sql="select password from board where num=?";
-		pstmt=con.prepareStatement(sql);
-		pstmt.setInt(1, num);
-		
-		rs=pstmt.executeQuery();
-		
-		if(rs.next()) {
-			pass=rs.getString(1);
-		}
-		con.close();
-	}catch(Exception e) {
-		e.printStackTrace();
-	}	
-	return pass;
-}
-public void deleteBoard(int num) {
-	getCon();
-	try {
-		String sql="delete from board where num=?";
-		pstmt=con.prepareStatement(sql);
-		pstmt.setInt(1, num);
-		pstmt.executeUpdate();
-		con.close();
-		
-	}catch(Exception e){
-		e.printStackTrace();
-	}
+		try {
+			String levelsql="update board set re_level=re_level+1 where ref=? and re_level>?";
 			
+			pstmt=con.prepareStatement(levelsql);
+			
+			pstmt.setInt(1,ref);
+			pstmt.setInt(2, re_level);
+			
+			pstmt.executeUpdate();
+			
+			String sql="insert into board values(bo_seq.NEXTVAL,?,?,?,?,sysdate,?,?,?,0,?)";
+			//댓글을 디비에 삽입시킨다.
+			pstmt=con.prepareStatement(sql);
+			
+			pstmt.setString(1, bean.getWriter());
+			pstmt.setString(2, bean.getEmail());
+			pstmt.setString(3, bean.getSubject());
+			pstmt.setString(4, bean.getPassword());
+			pstmt.setInt(5, ref);
+			pstmt.setInt(6, re_step+1);
+			pstmt.setInt(7, re_level+1);
+			pstmt.setString(8, bean.getContent());
+			
+			pstmt.executeUpdate();
+			con.close();
+	
+		}catch(Exception e) {
+			e.printStackTrace();
+		}	
 	}
-}
-}
+	public BoardBean oneupdateBoard(int num) {
+		BoardBean bean=new BoardBean();
+		getCon();
+		
+		try {
+			String sql="select *from board where num=?";
+			pstmt=con.prepareStatement(sql);
+			
+			pstmt.setInt(1, num);
+			
+			rs=pstmt.executeQuery();
+			
+			if(rs.next()) {
+				//테이블에 저장되어있는 값들 다 가져와 bean에 세팅
+				bean.setNum(rs.getInt(1));
+				bean.setWriter(rs.getString(2));
+				bean.setEmail(rs.getString(3));
+				bean.setSubject(rs.getString(4));
+				bean.setPassword(rs.getString(5));
+				bean.setReg_date(rs.getDate(6).toString());
+				bean.setRef(rs.getInt(7));
+				bean.setRe_step(rs.getInt(8));
+				bean.setRe_level(rs.getInt(9));
+				bean.setReadcount(rs.getInt(10));
+				bean.setContent(rs.getString(11));
+				
+			}
+			con.close();
+			
+		}catch(Exception e) {
+			e.printStackTrace();
+		}	
+		return bean;
+	}
+	public String getPass(int num) {
+		
+		String pass="";
+		getCon();
+		
+		try {
+			String sql="select password from board where num=?";
+			pstmt=con.prepareStatement(sql);
+			pstmt.setInt(1, num);
+			
+			rs=pstmt.executeQuery();
+			
+			if(rs.next()) {
+				pass=rs.getString(1);
+			}
+			con.close();
+		}catch(Exception e) {
+			e.printStackTrace();
+		}	
+		return pass;
+	}
+	public void updateBoard(BoardBean bean) {
+		
+		getCon();
+		try {
+			String sql="update board set subject=?, content=? where num=?";
+			pstmt=con.prepareStatement(sql);
+			
+			pstmt.setString(1, bean.getSubject());
+			pstmt.setString(2, bean.getContent());
+			pstmt.setInt(3, bean.getNum());
+			
+			pstmt.executeUpdate();
+			con.close();
+		}catch(Exception e) {
+			e.printStackTrace();
+		}			
+	}
+	public void deleteBoard(int num) {
+		getCon();
+		try {
+			String sql="delete from board where num=?";
+			pstmt=con.prepareStatement(sql);
+			pstmt.setInt(1, num);
+			pstmt.executeUpdate();
+			con.close();
+			
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+				
+		}
+	}
